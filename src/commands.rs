@@ -1,7 +1,7 @@
 use crate::{Context, Error};
 use poise::{serenity_prelude::MessageId, CreateReply};
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command, guild_only)]
 pub async fn say(
     ctx: Context<'_>,
     #[description = "What to say"] text_to_say: String,
@@ -11,15 +11,7 @@ pub async fn say(
         .await?;
 
     let Some(message_id) = message_id else {
-        match ctx.guild_channel().await {
-            Some(channel) => {
-                channel.say(ctx.http(), text_to_say).await?;
-            },
-            None => {
-                ctx.say("This command can only be used in a guild").await?;
-                return Ok(());
-            }
-        };
+        ctx.channel_id().say(ctx.http(), text_to_say).await?;
         return Ok(());
     };
 
