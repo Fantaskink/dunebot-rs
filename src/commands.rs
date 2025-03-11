@@ -1,31 +1,37 @@
 use crate::{Context, Error};
+use poise::{serenity_prelude::MessageId, CreateReply};
 
 #[poise::command(slash_command)]
 pub async fn say(
     ctx: Context<'_>,
     #[description = "What to say"] text_to_say: String,
-    #[description = "The id of the message to reply to"] message_id: Option<String>,
+    #[description = "The id of the message to reply to"] message_id: Option<MessageId>,
 ) -> Result<(), Error> {
-    if let Some(message_id) = message_id {
-        let message_id = match message_id.parse::<u64>() {
-            Ok(message_id) => message_id,
-            Err(why) => {
-                println!("Error parsing message id: {:?}", why);
-                return Ok(());
-            }
-        };
+    ctx.send(CreateReply::default().content("Alright boss").ephemeral(true))
+        .await?;
 
-        let message = match ctx.channel_id().message(ctx.http(), message_id).await {
-            Ok(message) => message,
-            Err(why) => {
-                println!("Error getting message: {:?}", why);
+    let Some(message_id) = message_id else {
+        match ctx.guild_channel().await {
+            Some(channel) => {
+                channel.say(ctx.http(), text_to_say).await?;
+            },
+            None => {
+                ctx.say("This command can only be used in a guild").await?;
                 return Ok(());
             }
         };
-        message.reply_mention(ctx.http(), text_to_say).await?;
-    } else {
-        ctx.say(text_to_say).await?;
-    }
+        return Ok(());
+    };
+
+    let message = match ctx.channel_id().message(ctx.http(), message_id).await {
+        Ok(message) => message,
+        Err(why) => {
+            println!("Error getting message: {:?}", why);
+            return Ok(());
+        }
+    };
+    message.reply_ping(ctx.http(), text_to_say).await?;
+
     Ok(())
 }
 
