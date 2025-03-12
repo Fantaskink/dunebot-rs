@@ -130,7 +130,6 @@ pub async fn kino(
     let details_result = MovieDetails::new(item.inner.id).execute(&client).await;
 
     if let Ok(details) = details_result {
-        // Add commas to the budget
         let budget = format_currency(details.budget);
         embed = embed.field("Budget", format!("${}", budget), true);
 
@@ -156,9 +155,6 @@ pub async fn kino(
         if let Ok(primary_color) = get_image_primary_color(&poster_url).await {
             embed = embed.color(primary_color);
         }
-        
-    } else {
-        embed = embed.description("No poster available");
     }
 
     ctx.send(CreateReply::default().embed(embed)).await?;
