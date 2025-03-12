@@ -1,4 +1,5 @@
 use crate::{Context, Error};
+use chrono::Datelike;
 use poise::{serenity_prelude::MessageId, CreateReply};
 use serenity::all::CreateEmbed;
 
@@ -11,12 +12,12 @@ use tmdb_api::prelude::Command;
 
 use reqwest::Client as ReqwestClient;
 
-extern crate image;
 extern crate color_thief;
+extern crate image;
 
-use image::load_from_memory;
-use color_thief::ColorFormat;
 use color_thief::get_palette;
+use color_thief::ColorFormat;
+use image::load_from_memory;
 
 //#[poise::command(slash_command, guild_only, required_permissions = "ADMINISTRATOR")]
 #[poise::command(slash_command, guild_only)]
@@ -91,7 +92,15 @@ pub async fn kino(
         return Ok(());
     };
 
-    let mut embed = CreateEmbed::default().title(&item.inner.title);
+    let mut embed = CreateEmbed::default();
+
+    if let Some(release_date) = &item.inner.release_date {
+        let title_with_year = format!("{} ({})", item.inner.title, release_date.year());
+        embed = embed.title(&title_with_year);
+    } else {
+        embed = embed.title(&item.inner.title);
+    }
+
     embed = embed.field("Description", &item.inner.overview, false);
 
     if let Some(poster_path) = &item.inner.poster_path {
