@@ -5,6 +5,7 @@ use serenity::all::CreateEmbed;
 
 use dotenv::var;
 
+use serenity::all::CreateEmbedFooter;
 use tmdb_api::client::reqwest::ReqwestExecutor;
 use tmdb_api::client::Client;
 use tmdb_api::movie::details::MovieDetails;
@@ -125,7 +126,18 @@ pub async fn kino(
             .join(",");
         let revenue = revenue.chars().rev().collect::<String>();
         embed = embed.field("Revenue", format!("${}", revenue), true);
+
+        if let Some(runtime) = details.runtime {
+            embed = embed.field("Runtime", format!("{} minutes", runtime), true);
+        }
+
+        if let Some(imdb_id) = details.imdb_id {
+            let imdb_link = format!("https://www.imdb.com/title/{}", imdb_id);
+            embed = embed.field("IMDb Link", imdb_link, false);
+        }
     }
+
+    embed = embed.footer(CreateEmbedFooter::new("Data sourced from TMDb"));
 
     if let Some(poster_path) = &item.inner.poster_path {
         let poster_url = format!("https://image.tmdb.org/t/p/original{}", poster_path);
