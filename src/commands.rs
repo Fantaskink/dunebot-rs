@@ -116,6 +116,15 @@ pub async fn kino(
             .join(",");
         let budget = budget.chars().rev().collect::<String>();
         embed = embed.field("Budget", format!("${}", budget), true);
+
+        let revenue = details.revenue.to_string().chars().rev().collect::<Vec<_>>();
+        let revenue = revenue
+            .chunks(3)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<_>>()
+            .join(",");
+        let revenue = revenue.chars().rev().collect::<String>();
+        embed = embed.field("Revenue", format!("${}", revenue), true);
     }
 
     if let Some(poster_path) = &item.inner.poster_path {
