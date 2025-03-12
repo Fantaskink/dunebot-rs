@@ -55,6 +55,7 @@ pub async fn kino(
     #[description = "The title of the movie"] movie_title: String,
     #[description = "The year the movie was released"] year: Option<u16>,
 ) -> Result<(), Error> {
+    ctx.defer().await?;
     dotenv::dotenv().ok();
 
     let Ok(tmdb_api_key) = var("TMDB_API_KEY") else {
