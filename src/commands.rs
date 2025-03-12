@@ -52,6 +52,16 @@ pub async fn say(
     Ok(())
 }
 
+pub fn format_currency(value: u64) -> String {
+    let value_str = value.to_string().chars().rev().collect::<Vec<_>>();
+    let value_str = value_str
+        .chunks(3)
+        .map(|chunk| chunk.iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join(",");
+    value_str.chars().rev().collect::<String>()
+}
+
 #[poise::command(slash_command)]
 pub async fn kino(
     ctx: Context<'_>,
@@ -109,22 +119,10 @@ pub async fn kino(
 
     if let Ok(details) = details_result {
         // Add commas to the budget
-        let budget = details.budget.to_string().chars().rev().collect::<Vec<_>>();
-        let budget = budget
-            .chunks(3)
-            .map(|chunk| chunk.iter().collect::<String>())
-            .collect::<Vec<_>>()
-            .join(",");
-        let budget = budget.chars().rev().collect::<String>();
+        let budget = format_currency(details.budget);
         embed = embed.field("Budget", format!("${}", budget), true);
 
-        let revenue = details.revenue.to_string().chars().rev().collect::<Vec<_>>();
-        let revenue = revenue
-            .chunks(3)
-            .map(|chunk| chunk.iter().collect::<String>())
-            .collect::<Vec<_>>()
-            .join(",");
-        let revenue = revenue.chars().rev().collect::<String>();
+        let revenue = format_currency(details.revenue);
         embed = embed.field("Revenue", format!("${}", revenue), true);
 
         if let Some(runtime) = details.runtime {
