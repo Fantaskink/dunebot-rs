@@ -142,7 +142,7 @@ pub async fn kino(
 
         if let Some(imdb_id) = details.imdb_id {
             let imdb_link = format!("https://www.imdb.com/title/{}", imdb_id);
-            embed = embed.field("IMDb Link", imdb_link, false);
+            embed = embed.url(imdb_link);
         }
     }
 
