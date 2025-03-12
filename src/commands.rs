@@ -7,6 +7,7 @@ use dotenv::var;
 
 use tmdb_api::client::reqwest::ReqwestExecutor;
 use tmdb_api::client::Client;
+use tmdb_api::movie::details::MovieDetails;
 use tmdb_api::movie::search::MovieSearch;
 use tmdb_api::prelude::Command;
 
@@ -102,6 +103,20 @@ pub async fn kino(
     }
 
     embed = embed.field("Description", &item.inner.overview, false);
+
+    let details_result = MovieDetails::new(item.inner.id).execute(&client).await;
+
+    if let Ok(details) = details_result {
+        // Add commas to the budget
+        let budget = details.budget.to_string().chars().rev().collect::<Vec<_>>();
+        let budget = budget
+            .chunks(3)
+            .map(|chunk| chunk.iter().collect::<String>())
+            .collect::<Vec<_>>()
+            .join(",");
+        let budget = budget.chars().rev().collect::<String>();
+        embed = embed.field("Budget", format!("${}", budget), true);
+    }
 
     if let Some(poster_path) = &item.inner.poster_path {
         let poster_url = format!("https://image.tmdb.org/t/p/original{}", poster_path);
