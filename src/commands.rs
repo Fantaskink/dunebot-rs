@@ -52,7 +52,7 @@ pub async fn say(
     Ok(())
 }
 
-pub fn format_currency(value: u64) -> String {
+fn format_currency(value: u64) -> String {
     let value_str = value.to_string().chars().rev().collect::<Vec<_>>();
     let value_str = value_str
         .chunks(3)
@@ -60,6 +60,18 @@ pub fn format_currency(value: u64) -> String {
         .collect::<Vec<_>>()
         .join(",");
     value_str.chars().rev().collect::<String>()
+}
+
+async fn get_image_primary_color(url: &str) -> Result<(u8, u8, u8), Error> {
+    let reqwest_client = ReqwestClient::new();
+    let response = reqwest_client.get(url).send().await?;
+    let image_data = response.bytes().await?;
+    let image = load_from_memory(&image_data)?;
+    let pixels = image.to_rgba8();
+    let pixels = pixels.as_raw();
+    let palette = get_palette(pixels, ColorFormat::Rgba, 10, 2)?;
+    let primary_color = palette.first().ok_or("No primary color found")?;
+    Ok((primary_color.r, primary_color.g, primary_color.b))
 }
 
 #[poise::command(slash_command)]
@@ -141,60 +153,10 @@ pub async fn kino(
         let poster_url = format!("https://image.tmdb.org/t/p/original{}", poster_path);
         embed = embed.image(&poster_url);
 
-        // Fetch the image data
-        let reqwest_client = ReqwestClient::new();
-        let Ok(response) = reqwest_client.get(&poster_url).send().await else {
-            println!("Failed to fetch image");
-            ctx.send(
-                CreateReply::default()
-                    .content("Failed to fetch image")
-                    .ephemeral(true),
-            )
-            .await?;
-            return Ok(());
-        };
-
-        let Ok(image_data) = response.bytes().await else {
-            println!("Failed to read image data");
-            ctx.send(
-                CreateReply::default()
-                    .content("Failed to read image data")
-                    .ephemeral(true),
-            )
-            .await?;
-            return Ok(());
-        };
-
-        let Ok(image) = load_from_memory(&image_data) else {
-            println!("Failed to load image");
-            ctx.send(
-                CreateReply::default()
-                    .content("Failed to load image")
-                    .ephemeral(true),
-            )
-            .await?;
-            return Ok(());
-        };
-
-        // Convert the image to raw pixels
-        let pixels = image.to_rgba8();
-        let pixels = pixels.as_raw();
-
-        // Get the color palette
-        let Ok(palette) = get_palette(pixels, ColorFormat::Rgba, 10, 2) else {
-            println!("Failed to get color palette");
-            ctx.send(
-                CreateReply::default()
-                    .content("Failed to get color palette")
-                    .ephemeral(true),
-            )
-            .await?;
-            return Ok(());
-        };
-
-        if let Some(primary_color) = palette.first() {
-            embed = embed.color((primary_color.r, primary_color.g, primary_color.b));
+        if let Ok(primary_color) = get_image_primary_color(&poster_url).await {
+            embed = embed.color(primary_color);
         }
+        
     } else {
         embed = embed.description("No poster available");
     }
