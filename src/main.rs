@@ -1,6 +1,8 @@
 #![warn(clippy::str_to_string)]
 
-mod commands;
+mod admin;
+mod media;
+mod utils;
 
 use poise::serenity_prelude as serenity;
 
@@ -39,7 +41,7 @@ async fn main() {
     // FrameworkOptions contains all of poise's configuration option in one struct
     // Every option can be omitted to use its default value
     let options = poise::FrameworkOptions {
-        commands: vec![commands::say(), commands::kino()],
+        commands: vec![admin::say(), admin::start_reminding(), media::kino()],
         prefix_options: poise::PrefixFrameworkOptions {
             ..Default::default()
         },
