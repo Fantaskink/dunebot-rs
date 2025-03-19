@@ -41,7 +41,12 @@ async fn main() {
     // FrameworkOptions contains all of poise's configuration option in one struct
     // Every option can be omitted to use its default value
     let options = poise::FrameworkOptions {
-        commands: vec![admin::say(), admin::start_reminding(), media::kino(), media::book()],
+        commands: vec![
+            admin::say(),
+            admin::start_reminding(),
+            media::kino(),
+            media::book(),
+        ],
         prefix_options: poise::PrefixFrameworkOptions {
             ..Default::default()
         },

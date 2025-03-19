@@ -32,22 +32,22 @@ struct Book {
 async fn get_goodreads_url(book_title: &str) -> Result<String, Error> {
     // Parse book title to be used in the URL, i.e. replace spaces with '+' and special characters with their ASCII code
     let encoded_title = encode(book_title);
-    let url = format!("https://www.goodreads.com/search?utf8=✓&q={}&search_type=books&search[field]=on", encoded_title);
+    let url = format!(
+        "https://www.goodreads.com/search?utf8=✓&q={}&search_type=books&search[field]=on",
+        encoded_title
+    );
 
     let res = reqwest::get(url).await?;
     let text = res.text().await?;
 
     let document = Html::parse_document(&text);
 
-    // table = soup.find('table', class_='tableList')
     let table_selector = Selector::parse("table.tableList").unwrap();
     let table = document.select(&table_selector).next().unwrap();
 
-    // get table <a> element
     let a_selector = Selector::parse("a").unwrap();
     let a = table.select(&a_selector).next().unwrap();
 
-    // get href attribute
     let href = a.value().attr("href").unwrap();
 
     let goodreads_url = format!("https://www.goodreads.com{}", href);
@@ -129,30 +129,35 @@ pub async fn book(
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let Ok(goodreads_url) = get_goodreads_url(&book_title).await else {
-        ctx.send(CreateReply::default().content("Error searching for book"))
-            .await?;
-        return Ok(());
-    };
+    // Fetch Goodreads URL
+    let goodreads_url = get_goodreads_url(&book_title)
+        .await
+        .map_err(|_| "Error searching for book")?;
 
-    println!("Goodreads URL: {}", goodreads_url);
+    // Fetch book details
+    let book = get_book(&goodreads_url)
+        .await
+        .map_err(|_| "Error fetching book details")?;
 
-    let Ok(book) = get_book(&goodreads_url).await else {
-        ctx.send(CreateReply::default().content("Error fetching book details"))
-            .await?;
-        return Ok(());
-    };
+    // Build and send the embed
+    let embed = build_book_embed(&book).await?;
+    ctx.send(CreateReply::default().embed(embed)).await?;
 
+    Ok(())
+}
+
+async fn build_book_embed(book: &Book) -> Result<CreateEmbed, Error> {
     let mut embed = CreateEmbed::default();
 
+    // Title and URL
     if let Some(title) = &book.title {
         embed = embed.title(title);
     }
-
     if let Some(book_url) = &book.book_url {
         embed = embed.url(book_url);
     }
 
+    // Thumbnail and primary color
     if let Some(thumbnail_url) = &book.thumbnail_url {
         embed = embed.thumbnail(thumbnail_url);
 
@@ -161,36 +166,43 @@ pub async fn book(
         }
     }
 
+    // Author
     if let Some(author) = &book.author {
         embed = embed.field("Author", author, true);
     }
 
+    // Published date
     if let Some(published_date) = &book.published_date {
         embed = embed.field("Published", published_date, true);
     }
 
-    if let Some(description) = &book.description {
-        let short_description = if description.len() > 500 {
-            format!("{}...", &description[..500])
-        } else {
-            description.clone()
-        };
-        embed = embed.field("Description", short_description, false);
-    } else {
-        embed = embed.field("Description", "No description available", false);
-    }
+    // Description
+    let description = book
+        .description
+        .as_deref()
+        .map_or("No description available".to_owned(), truncate_description);
+    embed = embed.field("Description", description, false);
 
+    // Page count
     if let Some(page_count) = book.page_count {
         embed = embed.field("Page Count", page_count.to_string(), true);
     }
 
+    // Rating
     if let Some(rating) = book.rating {
         embed = embed.field("Rating", format!("{:.1}/5", rating), true);
     }
 
-    ctx.send(CreateReply::default().embed(embed)).await?;
+    Ok(embed)
+}
 
-    Ok(())
+fn truncate_description(description: &str) -> String {
+    if description.chars().count() > 500 {
+        let truncated: String = description.chars().take(500).collect();
+        format!("{}...", truncated)
+    } else {
+        description.to_owned()
+    }
 }
 
 #[poise::command(slash_command)]
