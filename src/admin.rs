@@ -15,7 +15,10 @@ pub async fn start_reminding(
     tokio::spawn(async move {
         loop {
             sleep(Duration::from_secs(3600)).await;
-            if let Err(why) = channel_id.say(&http, format!("<@{}> {}", user_id, message)).await {
+            if let Err(why) = channel_id
+                .say(&http, format!("<@{}> {}", user_id, message))
+                .await
+            {
                 println!("Error sending message: {:?}", why);
             }
         }
