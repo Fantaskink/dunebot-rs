@@ -35,15 +35,12 @@ pub async fn start_birthday_reminders(ctx: Context<'_>) -> Result<(), Error> {
                     }
                 });
 
-            println!("Loaded birthdays: {:?}", birthdays);
-
             // Get today's date
             let today = chrono::Utc::now().date_naive();
 
             // Check for birthdays
             for (username, birth_date) in birthdays.iter() {
                 if birth_date.month() == today.month() && birth_date.day() == today.day() {
-                    println!("Sending birthday message to {}", username);
                     // Send a birthday message
                     if let Err(why) = channel_id
                         .say(&http, format!("🎉 Happy Birthday, {}! 🎂", username))
