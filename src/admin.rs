@@ -1,32 +1,67 @@
 use crate::{Context, Error};
-use poise::{serenity_prelude::MessageId, CreateReply};
-use serenity::all::UserId;
+use chrono::{Datelike, NaiveDate};
+use poise::CreateReply;
+use serenity::all::MessageId;
+use std::collections::HashMap;
+use std::fs::File;
 use tokio::time::{sleep, Duration};
 
 #[poise::command(slash_command, guild_only)]
-pub async fn start_reminding(
-    ctx: Context<'_>,
-    #[description = "The user to remind"] user_id: UserId,
-    #[description = "The message to remind them with"] message: String,
-) -> Result<(), Error> {
+pub async fn start_birthday_reminders(ctx: Context<'_>) -> Result<(), Error> {
     let http = ctx.serenity_context().http.clone(); // Get a cloned Arc<Http>
     let channel_id = ctx.channel_id();
 
     tokio::spawn(async move {
         loop {
-            sleep(Duration::from_secs(3600)).await;
-            if let Err(why) = channel_id
-                .say(&http, format!("<@{}> {}", user_id, message))
-                .await
-            {
-                println!("Error sending message: {:?}", why);
+            // Sleep for 24 hours
+            sleep(Duration::from_secs(24 * 60 * 60)).await;
+
+            // Load the CSV file
+            let file = match File::open("birthdays.csv") {
+                Ok(file) => file,
+                Err(err) => {
+                    println!("Error opening CSV file: {:?}", err);
+                    continue;
+                }
+            };
+
+            // Parse the CSV file
+            let mut rdr = csv::Reader::from_reader(file);
+            let mut birthdays: HashMap<String, NaiveDate> = HashMap::new();
+            rdr.records()
+                .filter_map(Result::ok)
+                .for_each(|record| {
+                    if let (Some(username), Some(birth_date)) = (record.get(0), record.get(1)) {
+                        if let Ok(date) = NaiveDate::parse_from_str(birth_date, "%Y-%m-%d") {
+                            birthdays.insert(username.to_string(), date);
+                        }
+                    }
+                });
+
+            println!("Loaded birthdays: {:?}", birthdays);
+
+            // Get today's date
+            let today = chrono::Utc::now().date_naive();
+
+            // Check for birthdays
+            for (username, birth_date) in birthdays.iter() {
+                if birth_date.month() == today.month() && birth_date.day() == today.day() {
+                    println!("Sending birthday message to {}", username);
+                    // Send a birthday message
+                    if let Err(why) = channel_id
+                        .say(&http, format!("🎉 Happy Birthday, {}! 🎂", username))
+                        .await
+                    {
+                        println!("Error sending birthday message: {:?}", why);
+                    }
+                }
             }
         }
     });
 
     ctx.send(
         CreateReply::default()
-            .content("Started pinging the user every hour")
+            .content("Started birthday reminders!")
             .ephemeral(true),
     )
     .await?;

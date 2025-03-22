@@ -43,7 +43,7 @@ async fn main() {
     let options = poise::FrameworkOptions {
         commands: vec![
             admin::say(),
-            admin::start_reminding(),
+            admin::start_birthday_reminders(),
             media::kino(),
             media::book(),
         ],

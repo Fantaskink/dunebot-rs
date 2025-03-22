@@ -1,7 +1,6 @@
 use crate::utils;
 use crate::{Context, Error};
 use poise::CreateReply;
-
 use serenity::all::CreateEmbed;
 
 use dotenv::var;
