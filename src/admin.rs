@@ -13,9 +13,6 @@ pub async fn start_birthday_reminders(ctx: Context<'_>) -> Result<(), Error> {
 
     tokio::spawn(async move {
         loop {
-            // Sleep for 24 hours
-            sleep(Duration::from_secs(24 * 60 * 60)).await;
-
             // Load the CSV file
             let file = match File::open("birthdays.csv") {
                 Ok(file) => file,
@@ -56,6 +53,8 @@ pub async fn start_birthday_reminders(ctx: Context<'_>) -> Result<(), Error> {
                     }
                 }
             }
+            // Sleep for 24 hours
+            sleep(Duration::from_secs(24 * 60 * 60)).await;
         }
     });
 
