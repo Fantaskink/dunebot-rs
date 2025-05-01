@@ -48,6 +48,7 @@ async fn main() {
             media::kino(),
             media::book(),
             misc::timezone(),
+            misc::fix_twitter_link(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             ..Default::default()

@@ -43,11 +43,29 @@ pub async fn timezone(
     // Only get hour, minute, day and month
     let tz = local_time.format("%H:%M %d/%m").to_string();
 
-    ctx.send(
-        CreateReply::default()
-            .content(format!("The current time for {} is: {}", user.user.name, tz))
-            
-    ).await?;
+    ctx.send(CreateReply::default().content(format!(
+        "The current time and date for {} is: {}",
+        user.user.name, tz
+    )))
+    .await?;
+
+    Ok(())
+}
+
+#[poise::command(slash_command)]
+pub async fn fix_twitter_link(
+    ctx: Context<'_>,
+    #[description = "The Twitter link to fix"] twitter_link: String,
+) -> Result<(), Error> {
+    let fixed_link = twitter_link.replace("https://x.com/", "https://vxtwitter.com/");
+
+    // Remove tracking parameters
+    let fixed_link = fixed_link
+        .split('?')
+        .next()
+        .unwrap_or(&fixed_link)
+        .to_string();
+    ctx.send(CreateReply::default().content(fixed_link)).await?;
 
     Ok(())
 }
