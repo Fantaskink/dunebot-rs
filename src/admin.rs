@@ -25,15 +25,13 @@ pub async fn start_birthday_reminders(ctx: Context<'_>) -> Result<(), Error> {
             // Parse the CSV file
             let mut rdr = csv::Reader::from_reader(file);
             let mut birthdays: HashMap<String, NaiveDate> = HashMap::new();
-            rdr.records()
-                .filter_map(Result::ok)
-                .for_each(|record| {
-                    if let (Some(username), Some(birth_date)) = (record.get(0), record.get(1)) {
-                        if let Ok(date) = NaiveDate::parse_from_str(birth_date, "%Y-%m-%d") {
-                            birthdays.insert(username.to_string(), date);
-                        }
+            rdr.records().filter_map(Result::ok).for_each(|record| {
+                if let (Some(username), Some(birth_date)) = (record.get(0), record.get(1)) {
+                    if let Ok(date) = NaiveDate::parse_from_str(birth_date, "%Y-%m-%d") {
+                        birthdays.insert(username.to_string(), date);
                     }
-                });
+                }
+            });
 
             // Get today's date
             let today = chrono::Utc::now().date_naive();

@@ -3,6 +3,7 @@
 mod admin;
 mod media;
 mod utils;
+mod misc;
 
 use poise::serenity_prelude as serenity;
 
@@ -46,6 +47,7 @@ async fn main() {
             admin::start_birthday_reminders(),
             media::kino(),
             media::book(),
+            misc::timezone(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             ..Default::default()
