@@ -2,8 +2,8 @@
 
 mod admin;
 mod media;
-mod utils;
 mod misc;
+mod utils;
 
 use poise::serenity_prelude as serenity;
 
@@ -48,6 +48,7 @@ async fn main() {
             media::kino(),
             media::book(),
             misc::timezone(),
+            misc::timezones(),
             misc::fix_twitter_link(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
