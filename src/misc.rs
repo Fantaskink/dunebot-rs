@@ -141,8 +141,8 @@ pub async fn fix_twitter_link(
     #[description = "The Twitter link to fix"] twitter_link: String,
 ) -> Result<(), Error> {
     let fixed_link = twitter_link
-        .replace("https://x.com/", "https://vxtwitter.com/")
-        .replace("https://twitter.com/", "https://vxtwitter.com/");
+        .replace("https://x.com/", "https://fxtwitter.com/")
+        .replace("https://twitter.com/", "https://fxtwitter.com/");
 
     // Remove tracking parameters
     let fixed_link = fixed_link
