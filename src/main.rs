@@ -47,6 +47,7 @@ async fn main() {
             admin::start_birthday_reminders(),
             media::kino(),
             media::book(),
+            media::image(),
             misc::timezone(),
             misc::timezones(),
             misc::fix_twitter_link(),

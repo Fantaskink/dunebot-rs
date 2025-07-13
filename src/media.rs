@@ -288,3 +288,53 @@ pub async fn kino(
 
     Ok(())
 }
+
+#[poise::command(slash_command, guild_only)]
+pub async fn image(
+    ctx: Context<'_>,
+    #[description = "The search term for the image"] search_term: String,
+) -> Result<(), Error> {
+    ctx.defer().await?;
+
+    dotenv::dotenv().ok();
+
+    let Ok(api_key) = var("GOOGLE_API_KEY") else {
+        ctx.send(CreateReply::default().content("GOOGLE_API_KEY not set"))
+            .await?;
+        return Ok(());
+    };
+
+    let Ok(cse_id) = var("GOOGLE_CSE_ID") else {
+        ctx.send(CreateReply::default().content("GOOGLE_CSE_ID not set"))
+            .await?;
+        return Ok(());
+    };
+
+    let url = format!(
+        "https://www.googleapis.com/customsearch/v1?key={}&searchType=image&cx={}&q={}",
+        api_key, cse_id, search_term
+    );
+
+    let res = reqwest::get(&url)
+        .await
+        .map_err(|_| "Error fetching image")?;
+    let text = res
+        .text()
+        .await
+        .map_err(|_| "Error reading response body")?;
+    let json: serde_json::Value =
+        serde_json::from_str(&text).map_err(|_| "Error parsing JSON response")?;
+
+    if let Some(items) = json.get("items").and_then(|i| i.as_array()) {
+        if let Some(first_item) = items.first() {
+            if let Some(link) = first_item.get("link").and_then(|l| l.as_str()) {
+                ctx.send(CreateReply::default().content(link)).await?;
+                return Ok(());
+            }
+        }
+    }
+
+    ctx.send(CreateReply::default().content("No image found"))
+        .await?;
+    Ok(())
+}
