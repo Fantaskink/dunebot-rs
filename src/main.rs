@@ -6,8 +6,10 @@ mod misc;
 mod utils;
 
 use poise::serenity_prelude as serenity;
+use serenity::all::FullEvent;
 
 use dotenv::var;
+use std::fs::File;
 
 // Types used by all command functions
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -33,6 +35,34 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
             }
         }
     }
+}
+
+fn load_banned_words() -> Vec<String> {
+    match File::open("banned_words.csv") {
+        Ok(file) => {
+            let mut rdr = csv::Reader::from_reader(file);
+            let mut banned_words = Vec::new();
+            
+            for result in rdr.records() {
+                if let Ok(record) = result {
+                    if let Some(word) = record.get(0) {
+                        banned_words.push(word.to_lowercase());
+                    }
+                }
+            }
+            
+            banned_words
+        }
+        Err(err) => {
+            println!("Error opening banned_words.csv: {:?}", err);
+            Vec::new()
+        }
+    }
+}
+
+fn contains_banned_word(content: &str, banned_words: &[String]) -> bool {
+    let content_lower = content.to_lowercase();
+    banned_words.iter().any(|word| content_lower.contains(word))
 }
 
 #[tokio::main]
@@ -81,12 +111,26 @@ async fn main() {
         // Enforce command checks even for owners (enforced by default)
         // Set to true to bypass checks, which is useful for testing
         skip_checks_for_owners: false,
-        event_handler: |_ctx, event, _framework, _data| {
+        event_handler: |ctx, event, _framework, _data| {
             Box::pin(async move {
-                println!(
-                    "Got an event in event handler: {:?}",
-                    event.snake_case_name()
-                );
+                match event {
+                    FullEvent::Message { new_message } => {
+                        let banned_words = load_banned_words();
+                        
+                        if contains_banned_word(&new_message.content, &banned_words) {
+                            println!("Deleting message from {}: {}", new_message.author.name, new_message.content);
+                            if let Err(why) = new_message.delete(&ctx.http).await {
+                                println!("Error deleting message: {:?}", why);
+                            }
+                        }
+                    }
+                    _ => {
+                        println!(
+                            "Got an event in event handler: {:?}",
+                            event.snake_case_name()
+                        );
+                    }
+                }
                 Ok(())
             })
         },
